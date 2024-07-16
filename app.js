@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import contactsRouter from './routes/contactsRouter.js';
 import { initMongoDBConnection } from './db/innitMongoDBConnection.js';
 import { env } from './helpers/env.js';
+import authRouter from './routes/authRouter.js';
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ const startServer = async () => {
   app.use(cors());
   app.use(express.json());
 
+  app.use('/users', authRouter);
   app.use('/api/contacts', contactsRouter);
 
   app.use((_, res) => {
