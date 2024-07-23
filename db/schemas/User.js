@@ -1,6 +1,7 @@
 import mongoose, { model } from 'mongoose';
 import { mongoSaveError, setMongoUpdateSettings } from './hooks.js';
 import { subscriptions } from '../../helpers/subscriptions.js';
+import gravatar from 'gravatar';
 const { Schema } = mongoose;
 const userSchema = new Schema(
   {
@@ -21,6 +22,12 @@ const userSchema = new Schema(
     token: {
       type: String,
       default: null,
+    },
+    avatarURL: {
+      type: String,
+      default: function () {
+        return gravatar.url(this.email, { s: '250', d: 'retro' }, true);
+      },
     },
   },
   { versionKey: false, timestamps: true }

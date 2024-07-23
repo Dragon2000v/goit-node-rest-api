@@ -4,6 +4,32 @@ import HttpError from '../helpers/HttpError.js';
 import * as authServices from '../services/authServices.js';
 import { env } from '../helpers/env.js';
 import { subscriptions } from '../helpers/subscriptions.js';
+import gravatar from 'gravatar';
+
+import Jimp from 'jimp';
+import path from 'path';
+import fs from 'fs/promises';
+
+export const updateAvatar = async (req, res, next) => {
+  try {
+    const { path: tempUpload, originalname } = req.file;
+    const { _id: id } = req.user;
+    const avatarsDir = path.join(process.cwd(), 'public', 'avatars');
+    const filename = `${id}_${originalname}`;
+    const resultUpload = path.join(avatarsDir, filename);
+
+    const image = await Jimp.read(tempUpload);
+    await image.resize(250, 250).writeAsync(resultUpload);
+    await fs.unlink(tempUpload);
+
+    const avatarURL = `/avatars/${filename}`;
+    await authServices.updateUser({ _id: id }, { avatarURL });
+
+    res.json({ avatarURL });
+  } catch (error) {
+    next(error);
+  }
+};
 
 export const registerUser = async (req, res, next) => {
   try {
@@ -13,9 +39,11 @@ export const registerUser = async (req, res, next) => {
       throw HttpError(409, 'Email already in use');
     }
     const hashPassword = await bcrypt.hash(password, 10);
+    const avatarURL = gravatar.url(email, { s: '250', d: 'retro' }, true);
     const newUser = await authServices.registerUser({
       email,
       password: hashPassword,
+      avatarURL,
     });
     res.json({
       status: 201,
@@ -23,6 +51,7 @@ export const registerUser = async (req, res, next) => {
       data: {
         email: newUser.email,
         subscription: newUser.subscription,
+        avatarURL: newUser.avatarURL,
       },
     });
   } catch (error) {
