@@ -8,19 +8,31 @@ import {
   updateStatusContact,
 } from '../services/contactsServices.js';
 
-export const checkContactId = async (req, _, next) => {
-  const { id } = req.params;
-  const result = await getContactById(id);
-  if (!result) {
-    next(HttpError(404, 'Contact not found'));
-  } else {
-    next();
-  }
-};
-
-export const getAllContacts = async (_, res) => {
+export const getAllContacts = async (req, res, next) => {
   try {
-    const data = await listContacts();
+    const { page = 1, limit = 10, favorite } = req.query;
+    const { _id } = req.user;
+    console.log(favorite, typeof favorite, !(favorite === 'true'));
+
+    if (
+      Number.isNaN(Number(page)) ||
+      Number.isNaN(Number(page)) ||
+      Number(page) < 1 ||
+      Number(limit) < 1
+    ) {
+      throw HttpError(400, 'Query "page" & "limit" should be positive numbers');
+    }
+    if (!(favorite === 'true') && !(favorite === 'false')) {
+      throw HttpError(
+        400,
+        'Query "favorite" should be either "true" or "false"'
+      );
+    }
+
+    const skip = Number(page) * Number(limit) - Number(limit);
+
+    const data = await listContacts(_id, favorite, skip, Number(limit));
+
     res.json({
       status: 200,
       message: 'Contacts get successfully',
@@ -32,10 +44,12 @@ export const getAllContacts = async (_, res) => {
   }
 };
 
-export const getOneContact = async (req, res) => {
+export const getOneContact = async (req, res, next) => {
   try {
+    const { _id } = req.user;
     const { id } = req.params;
-    const data = await getContactById(id);
+    const data = await getContactById(id, _id);
+
     res.json({
       status: 200,
       message: `Contact with id ${id} got successfully`,
@@ -47,10 +61,12 @@ export const getOneContact = async (req, res) => {
   }
 };
 
-export const deleteContact = async (req, res) => {
+export const deleteContact = async (req, res, next) => {
   try {
+    const { _id } = req.user;
     const { id } = req.params;
-    const data = await removeContact(id);
+    const data = await removeContact(id, _id);
+
     res.json({
       status: 200,
       message: `Contact with id ${id} deleted successfully`,
@@ -62,10 +78,13 @@ export const deleteContact = async (req, res) => {
   }
 };
 
-export const createContact = async (req, res) => {
+export const createContact = async (req, res, next) => {
   try {
+    const { _id } = req.user;
+
     const { name, email, phone, favorite = false } = req.body;
-    const data = await addContact(name, email, phone, favorite);
+
+    const data = await addContact(name, email, phone, favorite, _id);
     res.json({
       status: 200,
       message: `Contact created successfully`,
@@ -77,11 +96,12 @@ export const createContact = async (req, res) => {
   }
 };
 
-export const updateContact = async (req, res) => {
+export const updateContact = async (req, res, next) => {
   try {
+    const { _id } = req.user;
     const { id } = req.params;
     const { name, email, phone } = req.body;
-    const data = await changeContact(id, { name, email, phone });
+    const data = await changeContact(id, { name, email, phone }, _id);
     res.json({
       status: 200,
       message: `Contact updated successfully`,
@@ -93,11 +113,12 @@ export const updateContact = async (req, res) => {
   }
 };
 
-export const patchFavoriteContact = async (req, res) => {
+export const patchFavoriteContact = async (req, res, next) => {
   try {
+    const { _id } = req.user;
     const { id } = req.params;
     const { favorite } = req.body;
-    const data = await updateStatusContact(id, favorite);
+    const data = await updateStatusContact(id, favorite, _id);
     res.json({
       status: 200,
       message: `Contact favorite status changed successfully`,

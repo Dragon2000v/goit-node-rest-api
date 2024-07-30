@@ -1,19 +1,34 @@
 import multer from 'multer';
-import path from 'path';
+import path from 'node:path';
+import HttpError from '../helpers/HttpError.js';
 
-const tmpDir = path.join(process.cwd(), 'tmp');
+const destination = path.resolve('temp');
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, tmpDir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, file.originalname);
+  destination,
+  filename: (req, file, callback) => {
+    const uniquePreffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    const filename = `${uniquePreffix}_${file.originalname}`;
+    callback(null, filename);
   },
 });
 
+const limits = {
+  fileSize: 1024 * 1024 * 5,
+};
+
+const fileFilter = (req, file, callback) => {
+  const extension = file.originalname.split('.').pop();
+  if (extension === 'exe') {
+    return callback(HttpError(400, '.exe not allow extension'));
+  }
+  callback(null, true);
+};
+
 const upload = multer({
   storage,
+  limits,
+  fileFilter,
 });
 
 export default upload;
