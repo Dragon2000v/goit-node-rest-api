@@ -3,15 +3,18 @@ import {
   getCurrentUser,
   loginUser,
   logoutUser,
+  patchAvatarUser,
   patchSubscriptionUser,
   registerUser,
-  updateAvatar,
+  resendVerifyMessage,
+  verifyUser,
 } from '../controllers/authControllers.js';
 import validateBody from '../helpers/validateBody.js';
 import {
   loginSchema,
   registerSchema,
-  updateContactSubscriptionSchema,
+  resendVerifyMessageSchema,
+  updateUserSubscriptionSchema,
 } from '../schemas/authSchemas.js';
 import { authenticate } from '../middlewares/authenticate.js';
 import upload from '../middlewares/upload.js';
@@ -29,15 +32,23 @@ authRouter.get('/current', authenticate, getCurrentUser);
 authRouter.patch(
   '/subscription',
   authenticate,
-  validateBody(updateContactSubscriptionSchema),
+  validateBody(updateUserSubscriptionSchema),
   patchSubscriptionUser
 );
 
 authRouter.patch(
-  '/avatars',
-  authenticate,
+  '/avatar',
   upload.single('avatar'),
-  updateAvatar
+  authenticate,
+  patchAvatarUser
+);
+
+authRouter.get('/verify/:verificationToken', verifyUser);
+
+authRouter.post(
+  '/verify',
+  validateBody(resendVerifyMessageSchema),
+  resendVerifyMessage
 );
 
 export default authRouter;

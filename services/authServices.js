@@ -1,7 +1,18 @@
 import { User } from '../db/schemas/User.js';
 
-export async function registerUser({ email, password, avatarURL }) {
-  return User.create({ email, password, subscription: 'starter', avatarURL });
+export async function registerUser({
+  email,
+  password,
+  verificationToken,
+  avatarURL,
+}) {
+  return User.create({
+    email,
+    password,
+    subscription: 'starter',
+    avatarURL,
+    verificationToken,
+  });
 }
 
 export async function findUser(filter) {
@@ -9,5 +20,5 @@ export async function findUser(filter) {
 }
 
 export async function updateUser(filter, data) {
-  return User.findOneAndUpdate(filter, data, { new: true });
+  return User.findOneAndUpdate(filter, data);
 }
